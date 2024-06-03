@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gesture Recognition</title>
+    <!-- Include mediapipe and TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/dist/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <h1>Hand Gesture Recognition</h1>
+    <video id="camera" width="640" height="480" autoplay></video>
+    <p id="gestureResult">Detected Gesture: </p>
+
+    <script>
+        // Function to start the camera feed
+        async function startCamera() {
+            const video = document.getElementById('camera');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            video.srcObject = stream;
+
+            return new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    resolve(video);
+                };
+            });
+        }
+
+        // Function to run hand tracking
+        async function runHandTracking() {
+            const video = await startCamera();
+            const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+            hands.setOptions({
+                maxNumHands: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5,
+            });
+            hands.onResults(handleHandResults);
+
+            video.play();
+            const canvas = new OffscreenCanvas(video.width, video.height);
+            const ctx = canvas.getContext('2d');
+
+            hands.send({ image: video });
+        }
+
+        // Function to handle hand tracking results
+        function handleHandResults(results) {
+            const gestureResult = document.getElementById('gestureResult');
+
+            if (results.multiHandLandmarks) {
+                const handLandmarks = results.multiHandLandmarks[0];
+                // You can use handLandmarks to identify gestures based on landmark positions
+                // For simplicity, let's just display the x-coordinate of the first landmark as an example
+                const firstLandmarkX = handLandmarks[0].x;
+                gestureResult.innerText = `Detected Gesture: ${firstLandmarkX}`;
+            } else {
+                gestureResult.innerText = 'No hand detected';
+            }
+        }
+
+        // Run hand tracking when the page loads
+        document.addEventListener('DOMContentLoaded', runHandTracking);
+    </script>
+</body>
+</html>
